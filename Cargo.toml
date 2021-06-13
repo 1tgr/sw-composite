@@ -8,3 +8,8 @@ documentation = "https://docs.rs/sw-composite"
 repository = "https://github.com/jrmuizel/sw-composite/"
 
 [dependencies]
+libm = "0.2.1"
+
+[features]
+default = ["std"]
+std = []
