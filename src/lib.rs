@@ -1,3 +1,21 @@
+#![no_std]
+
+extern crate alloc;
+
+#[cfg(not(feature = "std"))]
+extern crate libm;
+
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+
+#[cfg(feature = "std")]
+fn sqrtf(f: f32) -> f32 {
+    f.sqrt()
+}
+
+#[cfg(not(feature = "std"))]
+use libm::sqrtf;
+
 pub mod blend;
 
 const BILINEAR_INTERPOLATION_BITS: u32 = 4;
@@ -150,7 +168,7 @@ impl GradientSource {
         // so it's safe to use sqrt
         let px = p.x as f32;
         let py = p.y as f32;
-        let mut distance = (px * px + py * py).sqrt() as i32;
+        let mut distance = sqrtf(px * px + py * py) as i32;
         distance >>= 8;
 
         self.lut[apply_spread(distance, spread) as usize]
@@ -197,8 +215,8 @@ impl TwoCircleRadialGradientSource {
             if discr < 0. {
                 return 0;
             } else {
-                let t1 = (b + discr.sqrt())/a;
-                let t2 = (b - discr.sqrt())/a;
+                let t1 = (b + sqrtf(discr))/a;
+                let t2 = (b - sqrtf(discr))/a;
                 if t1 > t2 {
                     t1
                 } else {
@@ -669,12 +687,12 @@ impl MatrixFixedPoint {
 #[test]
 fn test_large_matrix() {
     let matrix = MatrixFixedPoint {
-        xx: std::i32::MAX, xy: std::i32::MAX, yx: std::i32::MAX,
-        yy: std::i32::MAX, x0: std::i32::MAX, y0: std::i32::MAX,
+        xx: core::i32::MAX, xy: core::i32::MAX, yx: core::i32::MAX,
+        yy: core::i32::MAX, x0: core::i32::MAX, y0: core::i32::MAX,
     };
     // `transform()` must not panic
     assert_eq!(
-        matrix.transform(std::u16::MAX, std::u16::MAX),
+        matrix.transform(core::u16::MAX, core::u16::MAX),
         PointFixedPoint { x: 2147352577, y: 2147352577 }
     );
 }
@@ -811,9 +829,9 @@ pub fn over_in_legacy_lerp(src: u32, dst: u32, alpha: u32) -> u32 {
 }
 
 #[cfg(target_arch = "x86")]
-use std::arch::x86::{self as x86_intrinsics, __m128i};
+use core::arch::x86::{self as x86_intrinsics, __m128i};
 #[cfg(target_arch = "x86_64")]
-use std::arch::x86_64::{self as x86_intrinsics, __m128i};
+use core::arch::x86_64::{self as x86_intrinsics, __m128i};
 
 #[cfg(not(all(any(target_arch = "x86", target_arch = "x86_64"), target_feature = "sse2")))]
 pub fn over_in_row(src: &[u32], dst: &mut [u32], alpha: u32) {
